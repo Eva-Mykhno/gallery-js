@@ -8,6 +8,7 @@ import 'izitoast/dist/css/iziToast.min.css';
 const jsGallery = document.querySelector('.js-gallery');
 const container = document.getElementById('tui-pagination-container');
 const formEl = document.querySelector('.js-search-form');
+const loader = document.querySelector('.loader');
 const pagination = new Pagination(container, {
   totalItems: 0,
   itemsPerPage: 12,
@@ -31,9 +32,7 @@ function getPopular(event) {
     jsGallery.innerHTML = markup;
   });
 }
-pagination.on('afterMove', 
-  getPopular
-);
+pagination.on('afterMove', getPopular);
 formEl.addEventListener('submit', event => {
   event.preventDefault();
   const searchQuery = event.target.elements.query.value.trim();
@@ -44,32 +43,38 @@ formEl.addEventListener('submit', event => {
     });
     return;
   }
-  pagination.off('afterMove', 
-  getPopular
-);
+  pagination.off('afterMove', getPopular);
   api.query = searchQuery;
-  pagination.off('afterMove', 
-  getByQuery
-);
-  api.getImagesByQuery(page).then(data => {
-    if(data.results.length === 0) {
-      iziToast.info({
-        message: 'No images found',
+  pagination.off('afterMove', getByQuery);
+  loader.classList.remove('hidden');
+  api
+    .getImagesByQuery(page)
+    .then(data => {
+      if (data.results.length === 0) {
+        iziToast.info({
+          message: 'No images found',
+        });
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+      iziToast.success({
+        message: `We are found ${data.total} images`,
       });
-      container.style.display = 'none';
-      return;
-    }
-    container.style.display = 'block';
-iziToast.success({
-    message: `We are found ${data.total} images`,
 
-})
+      const markup = createGalleryCard(data.results);
+      jsGallery.innerHTML = markup;
+      pagination.reset(data.total);
+    })
+    .catch(error => {
+      iziToast.error({
+        message: 'something went wrong',
+      });
+    })
+    .finally(() => {
+      loader.classList.add('hidden');
+    });
 
-    const markup = createGalleryCard(data.results);
-    jsGallery.innerHTML = markup;
-    pagination.reset(data.total);
-
-  });
   pagination.on('afterMove', getByQuery);
   formEl.reset();
 });
