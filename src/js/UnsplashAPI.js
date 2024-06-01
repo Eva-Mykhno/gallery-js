@@ -1,6 +1,6 @@
 import axios from 'axios';
 import iziToast from 'izitoast';
-
+import 'izitoast/dist/css/iziToast.min.css';
 export class UnsplashAPI {
   #BASE_URL = 'https://api.unsplash.com/search/photos';
   #API_KEY = 'gcevo00lZKvSMKLnZZJPKYS5xNbpbsP_4i6E-BVlG58';

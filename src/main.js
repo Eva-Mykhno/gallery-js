@@ -3,6 +3,7 @@ import { UnsplashAPI } from './js/UnsplashAPI';
 import { createGalleryCard } from './js/render-function';
 import Pagination from 'tui-pagination';
 import 'tui-pagination/dist/tui-pagination.min.css';
+import 'izitoast/dist/css/iziToast.min.css';
 
 const jsGallery = document.querySelector('.js-gallery');
 const container = document.getElementById('tui-pagination-container');
@@ -22,27 +23,61 @@ api.getPopularImages(page).then(data => {
   pagination.reset(data.total);
   jsGallery.innerHTML = markup;
 });
-pagination.on('afterMove', event => {
+function getPopular(event) {
   const currentPage = event.page;
   console.log(currentPage);
   api.getPopularImages(currentPage).then(data => {
     const markup = createGalleryCard(data.results);
     jsGallery.innerHTML = markup;
   });
-});
+}
+pagination.on('afterMove', 
+  getPopular
+);
 formEl.addEventListener('submit', event => {
   event.preventDefault();
   const searchQuery = event.target.elements.query.value.trim();
+
   if (searchQuery === '') {
     iziToast.info({
       message: 'enter text',
     });
     return;
   }
+  pagination.off('afterMove', 
+  getPopular
+);
   api.query = searchQuery;
+  pagination.off('afterMove', 
+  getByQuery
+);
   api.getImagesByQuery(page).then(data => {
+    if(data.results.length === 0) {
+      iziToast.info({
+        message: 'No images found',
+      });
+      container.style.display = 'none';
+      return;
+    }
+    container.style.display = 'block';
+iziToast.success({
+    message: `We are found ${data.total} images`,
+
+})
+
     const markup = createGalleryCard(data.results);
     jsGallery.innerHTML = markup;
     pagination.reset(data.total);
+
   });
+  pagination.on('afterMove', getByQuery);
+  formEl.reset();
 });
+function getByQuery(event) {
+  const currentPage = event.page;
+  console.log(currentPage);
+  api.getImagesByQuery(currentPage).then(data => {
+    const markup = createGalleryCard(data.results);
+    jsGallery.innerHTML = markup;
+  });
+}
